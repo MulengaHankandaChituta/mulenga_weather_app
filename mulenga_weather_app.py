@@ -1,6 +1,11 @@
-# weather  app using python
+import tkinter as tk
+from tkinter import messagebox
+import requests
+import os
+from dotenv import load_dotenv
 
-import  requests
+# Load environment variables from the .env file
+load_dotenv(dotenv_path='.env')
 
 def get_weather(api_key, city):
     base_url = "http://api.openweathermap.org/data/2.5/weather"
@@ -11,42 +16,54 @@ def get_weather(api_key, city):
         response.raise_for_status()
         weather_data = response.json()
         return weather_data
-    except  requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException as e:
         print(f"Error fetching weather data: {e}")
         return None
-    
-def display_weather(weather_data):
+
+def display_weather(city, weather_data):
     if weather_data:
-        print("\nCurrent Weather Conditions:")
-        print(f"City: {weather_data['name']}")
-        print(f"Temperature: {weather_data['main']['temp']}°C")
-        print(f"Humidity: {weather_data['main']['humidity']}%")
-        print(f"Description: {weather_data['weather'][0]['description']}")
+        weather_conditions = (
+            f"City: {city}\n"
+            f"Temperature: {weather_data['main']['temp']}°C\n"
+            f"Humidity: {weather_data['main']['humidity']}%\n"
+            f"Description: {weather_data['weather'][0]['description']}"
+        )
+        messagebox.showinfo("Weather Conditions", weather_conditions)
     else:
-        print("No weather data availeble.")
+        messagebox.showerror("Error", "No weather data available.")
+
+def fetch_weather(api_key, city_entry):
+    city = city_entry.get()
+    if not city:
+        messagebox.showerror("Error", "Please enter a city name.")
+        return
+
+    weather_data = get_weather(api_key, city)
+    display_weather(city, weather_data)
+
 def main():
-    api_key = "c6ec8aff2594866c806b70cbda6a6128"
-    city = input("Enter the city name:  ")
+    api_key = os.getenv("OPENWEATHER_API_KEY")
 
-    weather_data = get_weather(api_key,city)
-    display_weather(weather_data)
+    if not api_key:
+        messagebox.showerror("Error", "API key not found. Please set the API key in your .env file.")
+        return
 
-# Create the main window
-root = tk.Tk()
-root.title("Weather App")
+    root = tk.Tk()
+    root.title("Weather App")
 
-# Create and place the widgets
-city_label = tk.Label(root, text="Enter the city name:")
-city_label.pack(pady=5)
+    frame = tk.Frame(root)
+    frame.pack(padx=20, pady=20)
 
-city_entry = tk.Entry(root)
-city_entry.pack(pady=5)
+    label = tk.Label(frame, text="Enter city name:")
+    label.pack(side=tk.LEFT)
 
-get_weather_button = tk.Button(root, text="Get Weather", command=get_weather_button_clicked)
-get_weather_button.pack(pady=10)
+    city_entry = tk.Entry(frame, width=30)
+    city_entry.pack(side=tk.LEFT, padx=10)
 
-result_label = tk.Label(root, text="", justify="left")
-result_label.pack(pady=10)
+    fetch_button = tk.Button(frame, text="Fetch Weather", command=lambda: fetch_weather(api_key, city_entry))
+    fetch_button.pack(side=tk.LEFT)
 
-# Run the application
-root.mainloop()
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
