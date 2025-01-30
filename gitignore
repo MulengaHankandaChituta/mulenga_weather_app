@@ -1,0 +1,6 @@
+# Ignore .env file with API keys
+.env
+
+# ignore build and dist folders
+build/
+dist/
